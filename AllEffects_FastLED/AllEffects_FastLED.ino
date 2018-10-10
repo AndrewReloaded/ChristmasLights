@@ -13,10 +13,8 @@ void setup()
 {
   FastLED.addLeds<WS2811, PIN, GRB>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
   
-  pinMode(BUTTON, INPUT_PULLUP);// internal pull-up resistor
-  //digitalWrite (BUTTON, HIGH);  
-   
-  attachInterrupt (digitalPinToInterrupt (BUTTON), changeEffect, LOW); // pressed
+  pinMode(BUTTON, INPUT_PULLUP);// internal pull-up resistor  
+  attachInterrupt (digitalPinToInterrupt (BUTTON), interruptEffect, LOW); // pressed
 }
 
 
@@ -54,6 +52,11 @@ void loop() {
                break;
              }
              
+//    case 5:  {
+//               RunningLightsRainbow(50);
+//               break;
+//             }
+             
     default: {
                // rainbowCycle - speed delay
                rainbowCycle(20);
@@ -63,23 +66,17 @@ void loop() {
 }
 
 void changeEffect() {
-  if (digitalRead (BUTTON) == HIGH) {
     selectedEffect++;
     EEPROM.put(0, selectedEffect);
+    setAll(0, 0, 0);
+}
+
+void interruptEffect() {
+  if (digitalRead (BUTTON) == HIGH) {
     interrupted = 1;
-    //asm volatile ("  rjmp 0");
   }
 }
 
-byte isInterrupted() {  
-  if(interrupted) {
-    setAll(0,0,0);
-  }
-
-  byte res = interrupted;
-  interrupted = 0;
-  return res;
-}
 
 // *************************
 // ** LEDEffect Functions **
@@ -89,16 +86,15 @@ byte isInterrupted() {
 void TwinkleRandom(int Count, int SpeedDelay, boolean OnlyOne) {
   setAll(0,0,0);
   
-  for (int i=0; i < Count; i++) {
+  for (int i=0; i<Count; i++) {
      setPixel(random(NUM_LEDS),random(0,255),random(0,255),random(0,255));
-
-     if(isInterrupted()) {
+     
+     if(!showStrip()) {
        return;
      }
      
-     showStrip();
-     
      delay(SpeedDelay);
+     
      if(OnlyOne) { 
        setAll(0,0,0); 
      }
@@ -111,17 +107,16 @@ void rainbowCycle(int SpeedDelay) {
   byte *c;
   uint16_t i, j;
 
-  for(j = 0; j < 256*5; j++) { // 5 cycles of all colors on wheel
-    for(i = 0; i < NUM_LEDS; i++) {
-      c = Wheel(((i * 256 / NUM_LEDS) + j) & 255);
+  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< NUM_LEDS; i++) {
+      c=Wheel(((i * 256 / NUM_LEDS) + j) & 255);
       setPixel(i, *c, *(c+1), *(c+2));
     }
-
-    if(isInterrupted()) {
+    
+    if(!showStrip()) {
       return;
     }
     
-    showStrip();
     delay(SpeedDelay);
   }
 }
@@ -152,18 +147,16 @@ byte * Wheel(byte WheelPos) {
 void theaterChaseRainbow(int SpeedDelay) {
   byte *c;
   
-  for (int j = 0; j < 256; j++) {     // cycle all 256 colors in the wheel
-    for (int q = 0; q < 3; q++) {
-        for (int i = 0; i < NUM_LEDS; i=i+3) {
+  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
+    for (int q=0; q < 3; q++) {
+        for (int i=0; i < NUM_LEDS; i=i+3) {
           c = Wheel( (i+j) % 255);
           setPixel(i+q, *c, *(c+1), *(c+2));    //turn every third pixel on
         }
-
-        if(isInterrupted()) {
+        
+        if(!showStrip()) {
           return;
         }
-        
-        showStrip();
        
         delay(SpeedDelay);
        
@@ -174,12 +167,40 @@ void theaterChaseRainbow(int SpeedDelay) {
   }
 }
 
+//void RunningLightsRainbow(int WaveDelay) {
+//  byte *c;
+//  for (int j=0; j < 256; j++) {   
+//    c = Wheel(j);
+//    RunningLights(*c, *(c+1), *(c+2), WaveDelay);
+//  }
+//}
+//
+//void RunningLights(byte red, byte green, byte blue, int WaveDelay) {
+//  int Position=0;
+//  
+//  for(int i=0; i<NUM_LEDS*2; i++)
+//  {
+//      Position++;
+//      for(int i=0; i<NUM_LEDS; i++) {
+//        setPixel(i,((sin(i+Position) * 127 + 128)/255)*red,
+//                   ((sin(i+Position) * 127 + 128)/255)*green,
+//                   ((sin(i+Position) * 127 + 128)/255)*blue);
+//      }
+//      
+//      if(!showStrip()) {
+//        return;
+//      }
+//    
+//      delay(WaveDelay);
+//  }
+//}
+
 void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTrailDecay, boolean meteorRandomDecay, int SpeedDelay) {  
   setAll(0,0,0);
   
   for(int i = 0; i < NUM_LEDS+NUM_LEDS; i++) {   
     // fade brightness all LEDs one step
-    for(int j=0; j < NUM_LEDS; j++) {
+    for(int j=0; j<NUM_LEDS; j++) {
       if( (!meteorRandomDecay) || (random(10)>5) ) {
         fadeToBlack(j, meteorTrailDecay );        
       }
@@ -187,16 +208,15 @@ void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTra
     
     // draw meteor
     for(int j = 0; j < meteorSize; j++) {
-      if( ( i-j < NUM_LEDS) && (i-j >= 0) ) {
+      if( ( i-j <NUM_LEDS) && (i-j>=0) ) {
         setPixel(i-j, red, green, blue);
       } 
     }
-
-    if(isInterrupted()) {
+   
+    if(!showStrip()) {
       return;
     }
-   
-    showStrip();
+    
     delay(SpeedDelay);
   }
 }
@@ -216,8 +236,16 @@ void meteorRainRandom(byte meteorSize, byte meteorTrailDecay, boolean meteorRand
 // ***********************
 
 // Apply LED color changes
-void showStrip() {
+byte showStrip() {
   FastLED.show();
+
+  if(interrupted) {
+    interrupted = 0;
+    changeEffect();
+    return 0;
+  }
+  
+  return 1;
 }
 
 // Set a LED color (not yet visible)
