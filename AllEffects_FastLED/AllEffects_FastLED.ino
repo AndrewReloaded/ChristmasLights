@@ -52,11 +52,6 @@ void loop() {
                break;
              }
              
-//    case 5:  {
-//               RunningLightsRainbow(50);
-//               break;
-//             }
-             
     default: {
                // rainbowCycle - speed delay
                rainbowCycle(20);
@@ -166,34 +161,6 @@ void theaterChaseRainbow(int SpeedDelay) {
     }
   }
 }
-
-//void RunningLightsRainbow(int WaveDelay) {
-//  byte *c;
-//  for (int j=0; j < 256; j++) {   
-//    c = Wheel(j);
-//    RunningLights(*c, *(c+1), *(c+2), WaveDelay);
-//  }
-//}
-//
-//void RunningLights(byte red, byte green, byte blue, int WaveDelay) {
-//  int Position=0;
-//  
-//  for(int i=0; i<NUM_LEDS*2; i++)
-//  {
-//      Position++;
-//      for(int i=0; i<NUM_LEDS; i++) {
-//        setPixel(i,((sin(i+Position) * 127 + 128)/255)*red,
-//                   ((sin(i+Position) * 127 + 128)/255)*green,
-//                   ((sin(i+Position) * 127 + 128)/255)*blue);
-//      }
-//      
-//      if(!showStrip()) {
-//        return;
-//      }
-//    
-//      delay(WaveDelay);
-//  }
-//}
 
 void meteorRain(byte red, byte green, byte blue, byte meteorSize, byte meteorTrailDecay, boolean meteorRandomDecay, int SpeedDelay) {  
   setAll(0,0,0);
